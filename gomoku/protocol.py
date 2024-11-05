@@ -36,6 +36,7 @@ class CommandHandler:
             if size == 20:
                 self.game_board.initialize(size)
                 print("OK")
+                # self.game_board.visualize()
             else:
                 print("ERROR unsupported size")
         except ValueError:
@@ -46,12 +47,20 @@ class CommandHandler:
         x, y = map(int, command[1].split(","))
         self.game_board.opponent_move(x, y)
         next_move = self.game_board.calculate_move()
-        print(f"{next_move[0]},{next_move[1]}")
+        if next_move:
+            print(f"{next_move[0]},{next_move[1]}")
+            # self.game_board.visualize()
+        else:
+            print("ERROR no valid move")
         sys.stdout.flush()
 
     def handle_begin(self):
         move = self.game_board.calculate_move()
-        print(f"{move[0]},{move[1]}")
+        if move:
+            print(f"{move[0]},{move[1]}")
+            # self.game_board.visualize()
+        else:
+            print("ERROR no valid move")
         sys.stdout.flush()
 
     def handle_board(self):
@@ -63,7 +72,11 @@ class CommandHandler:
             self.game_board.set_position(x, y, field)
 
         move = self.game_board.calculate_move()
-        print(f"{move[0]},{move[1]}")
+        if move:            
+            print(f"{move[0]},{move[1]}")
+            # self.game_board.visualize()
+        else:
+            print("ERROR no valid move")
         sys.stdout.flush()
 
     def handle_end(self):
