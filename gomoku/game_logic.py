@@ -16,8 +16,7 @@ class GameBoard:
     def opponent_move(self, x, y):
         if self.is_valid_move(x, y):
             self.set_position(x, y, self.PLAYER)
-        else:
-            print(f"ERROR invalid move: {x}, {y}")
+
 
     def calculate_move(self):
         for i in range(self.size):

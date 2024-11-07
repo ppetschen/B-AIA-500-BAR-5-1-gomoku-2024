@@ -36,7 +36,7 @@ class CommandHandler:
             if size == 20:
                 self.game_board.initialize(size)
                 print("OK")
-                # self.game_board.visualize()
+                self.game_board.visualize()
             else:
                 print("ERROR unsupported size")
         except ValueError:
@@ -44,27 +44,33 @@ class CommandHandler:
         sys.stdout.flush()
 
     def handle_turn(self, command):
-        x, y = map(int, command[1].split(","))
-        self.game_board.opponent_move(x, y)
-        next_move = self.game_board.calculate_move()
-        if not self.game_board.validate_board():
-            print("Board validation failed after opponent move")
-        if next_move:
-            print(f"{next_move[0]},{next_move[1]}")
-            # self.game_board.visualize()
+        try:
+            x, y = map(int, command[1].split(","))
+            if not self.game_board.is_valid_move(x, y):
+                print(f"ERROR invalid move: {x}, {y}")
+                return
+            self.game_board.opponent_move(x, y)
             if not self.game_board.validate_board():
-                print("Board validation failed after AI move")
-        else:
-            print("ERROR no valid move")
+                raise ValueError("Board validation failed after opponent move")
+            next_move = self.game_board.calculate_move()
+            if next_move:
+                print(f"{next_move[0]},{next_move[1]}")
+                self.game_board.visualize()
+                if not self.game_board.validate_board():
+                    raise ValueError("Board validation failed after AI move")
+            else:
+                print("ERROR no valid move")
+        except ValueError as e:
+            print(f"ERROR {e}")
         sys.stdout.flush()
 
     def handle_begin(self):
         move = self.game_board.calculate_move()
         if move:
             print(f"{move[0]},{move[1]}")
-            # self.game_board.visualize()
+            self.game_board.visualize()
             if not self.game_board.validate_board():
-                print("Board validation failed after AI move")
+                print("ERROR board validation failed after AI move")
         else:
             print("ERROR no valid move")
         sys.stdout.flush()
@@ -76,16 +82,16 @@ class CommandHandler:
                 break
             x, y, field = map(int, line.split(","))
             try:
-                self.game_board.set_position(x, y, field)
+                self.game_board.set_position(x, y, str(field))
                 if not self.game_board.validate_board():
-                    print("Board validation failed after setting position")
+                    raise ValueError("Board validation failed after setting position")
             except ValueError as e:
                 print(f"ERROR {e}")
 
         move = self.game_board.calculate_move()
         if move:            
             print(f"{move[0]},{move[1]}")
-            # self.game_board.visualize()
+            self.game_board.visualize()
             if not self.game_board.validate_board():
                 print("ERROR board validation failed after AI move")
         else:
