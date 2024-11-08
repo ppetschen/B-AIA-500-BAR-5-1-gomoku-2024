@@ -59,7 +59,7 @@ class CommandHandler:
             self.game_board.opponent_move(x, y)
             if not self.game_board.validate_board():
                 raise ValueError("Board validation failed after opponent move")
-            
+
             best_move = self.calculate_best_move()
             if best_move:
                 print(f"{best_move[0]},{best_move[1]}")
@@ -96,7 +96,7 @@ class CommandHandler:
             except ValueError as e:
                 print(f"ERROR {e}")
 
-        move: Optional[Tuple[int, int]] = self.game_board.calculate_move()
+        move: Tuple[int, int] = self.ai.calculate_move()
         if move:
             print(f"{move[0]},{move[1]}")
             self.game_board.visualize()
@@ -123,9 +123,10 @@ class CommandHandler:
 
     def calculate_best_move(self) -> Optional[Tuple[int, int]]:
         best_move = [None]
+
         def run_ai():
             best_move[0] = self.ai.calculate_move()
-        
+
         ai_thread = threading.Thread(target=run_ai)
         ai_thread.start()
         ai_thread.join(timeout=AI_THREAD_TIMEOUT)
