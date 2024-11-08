@@ -1,14 +1,14 @@
 # tests/test_board.py
 
 import unittest
-from gomoku.board import initialize_board
+from gomoku.game_board import GameBoard
 
 class TestBoard(unittest.TestCase):
     def test_initialize_board(self):
-        board = initialize_board()
-        self.assertEqual(len(board), 20)
-        self.assertEqual(len(board[0]), 20)
-        self.assertTrue(all(cell == '.' for row in board for cell in row))
+        board = GameBoard()
+        self.assertEqual(len(board.board), 20)
+        self.assertEqual(len(board.board), 20)
+        self.assertTrue(all(cell == '.' for row in board.board for cell in row))
 
 if __name__ == '__main__':
     unittest.main()
