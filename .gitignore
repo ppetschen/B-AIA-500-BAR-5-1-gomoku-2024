@@ -4,6 +4,7 @@ liskvork-0.4.3-x86_64-linux-musl
 config.ini
 
 # Byte-compiled / optimized / DLL files
+__pycache__
 __pycache__/
 *.py[cod]
 *$py.class
