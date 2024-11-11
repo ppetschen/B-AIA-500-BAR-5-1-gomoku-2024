@@ -30,7 +30,7 @@ class CommandHandler:
         elif cmd_type == "TURN":
             self.handle_turn(command)
         elif cmd_type == "BEGIN":
-            self.handle_begin()
+            self.handle_begin(command)
         elif cmd_type == "BOARD":
             self.handle_board(command)
         elif cmd_type == "END":
@@ -41,6 +41,10 @@ class CommandHandler:
             self.send_unknown()
 
     def handle_start(self, command: List[str]) -> None:
+        if size := len(command) != 2:
+            print("ERROR invalid number of arguments")
+            sys.stdout.flush()
+            return
         try:
             size: int = int(command[1])
             if size == 20:
@@ -57,6 +61,10 @@ class CommandHandler:
         sys.stdout.flush()
 
     def handle_turn(self, command: List[str]) -> None:
+        if size := len(command) != 2:
+            print("ERROR invalid number of arguments")
+            sys.stdout.flush()
+            return
         if not self.game_started:
             print("ERROR game has not started")
             sys.stdout.flush()
@@ -84,7 +92,11 @@ class CommandHandler:
             print(f"ERROR {e}")
         sys.stdout.flush()
 
-    def handle_begin(self) -> None:
+    def handle_begin(self, command: List[str]) -> None:
+        if size := len(command) != 1:
+            print("ERROR invalid number of arguments")
+            sys.stdout.flush()
+            return
         if not self.game_started:
             print("ERROR game has not started")
             sys.stdout.flush()
@@ -106,6 +118,10 @@ class CommandHandler:
         sys.stdout.flush()
 
     def handle_board(self, command: List[str]) -> None:
+        if size := len(command) != 1:
+            print("ERROR invalid number of arguments")
+            sys.stdout.flush()
+            return
         if not self.game_started:
             print("ERROR game has not started")
             sys.stdout.flush()
@@ -121,7 +137,16 @@ class CommandHandler:
             line: str = sys.stdin.readline().strip()
             if line == "DONE":
                 break
-            x, y, field = map(int, line.split(","))
+            if line == "":
+                print("ERROR unexpected end of input")
+                sys.stdout.flush()
+                continue
+            parts = line.split(",")
+            if len(parts) != 3:
+                print("ERROR invalid number of arguments")
+                sys.stdout.flush()
+                continue
+            x, y, field = map(int, parts)
             try:
                 self.game_board.set_position(x, y, str(field))
                 if not self.game_board.validate_board():
