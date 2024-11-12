@@ -18,7 +18,6 @@ class BestMove:
 
 
 class AI:
-
     def __init__(self, game_board: GameBoard):
         self.game_board: GameBoard = game_board
         self.best_move: BestMove = BestMove()
@@ -27,7 +26,7 @@ class AI:
             1: 1,
             2: 10,
             3: 100,
-            4: 1000,
+            4: 10000,
             5: 100000,
         }
         self.enemy_scores = {
