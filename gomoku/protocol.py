@@ -5,7 +5,7 @@ from gomoku.ai import AI
 import threading
 import time
 from gomoku.config import AI_THREAD_TIMEOUT
-from gomoku.info_handler import InfoHandler
+
 
 class CommandHandler:
     def __init__(self):
@@ -15,8 +15,6 @@ class CommandHandler:
         self.game_started = False
         self.board_locked = False
         self.begin_locked = False
-        self.info_handler = InfoHandler()
-        self.timeout_turn_reached = False
 
     def listen_for_commands(self) -> None:
         for line in sys.stdin:
@@ -39,13 +37,11 @@ class CommandHandler:
             self.handle_end()
         elif cmd_type == "ABOUT":
             self.handle_about()
-        elif cmd_type == "INFO":
-            self.info_handler.handle_info(command)
         else:
             self.send_unknown()
 
     def handle_start(self, command: List[str]) -> None:
-        if len(command) != 2:
+        if size := len(command) != 2:
             print("ERROR invalid number of arguments")
             sys.stdout.flush()
             return
@@ -65,7 +61,7 @@ class CommandHandler:
         sys.stdout.flush()
 
     def handle_turn(self, command: List[str]) -> None:
-        if len(command) != 2:
+        if size := len(command) != 2:
             print("ERROR invalid number of arguments")
             sys.stdout.flush()
             return
@@ -75,7 +71,6 @@ class CommandHandler:
             return
         self.board_locked = True
         self.begin_locked = True
-
         try:
             x, y = map(int, command[1].split(","))
             if not self.game_board.is_valid_move(x, y):
@@ -84,19 +79,21 @@ class CommandHandler:
             self.game_board.opponent_move(x, y)
             if not self.game_board.validate_board():
                 raise ValueError("Board validation failed after opponent move")
+            
+            best_move = self.calculate_best_move()
+            if best_move:
+                print(f"{best_move[0]},{best_move[1]}")
+                self.game_board.visualize()
+                if not self.game_board.validate_board():
+                    raise ValueError("Board validation failed after AI move")
+            else:
+                print("ERROR no valid move")
         except ValueError as e:
             print(f"ERROR {e}")
-
-        best_move = self.calculate_best_move()
-        if best_move:
-            print(f"{best_move[0]},{best_move[1]}")
-            self.game_board.visualize()
-            if not self.game_board.validate_board():
-                print("ERROR board validation failed after AI move")
         sys.stdout.flush()
 
     def handle_begin(self, command: List[str]) -> None:
-        if len(command) != 1:
+        if size := len(command) != 1:
             print("ERROR invalid number of arguments")
             sys.stdout.flush()
             return
@@ -110,13 +107,6 @@ class CommandHandler:
             return
         self.board_locked = True
         self.begin_locked = True
-
-        timeout = self.info_handler.timeout_turn / 1000 if self.info_handler.timeout_turn > 0 else None
-        timer = None
-        if timeout:
-            timer = threading.Timer(timeout, self.timeout_reached)
-            timer.start()
-
         best_move = self.calculate_best_move()
         if best_move:
             print(f"{best_move[0]},{best_move[1]}")
@@ -125,15 +115,10 @@ class CommandHandler:
                 print("ERROR board validation failed after AI move")
         else:
             print("ERROR no valid move")
-        if timer:
-            timer.cancel()
-        if self.timeout_turn_reached:
-            print("ERROR timeout reached, ending round")
-            self.timeout_turn_reached = False
         sys.stdout.flush()
 
     def handle_board(self, command: List[str]) -> None:
-        if len(command) != 1:
+        if size := len(command) != 1:
             print("ERROR invalid number of arguments")
             sys.stdout.flush()
             return
@@ -148,13 +133,6 @@ class CommandHandler:
             return
         self.begin_locked = True
         self.board_locked = True
-
-        timeout = self.info_handler.timeout_turn / 1000 if self.info_handler.timeout_turn > 0 else None
-        timer = None
-        if timeout:
-            timer = threading.Timer(timeout, self.timeout_reached)
-            timer.start()
-
         while True:
             line: str = sys.stdin.readline().strip()
             if line == "DONE":
@@ -168,17 +146,15 @@ class CommandHandler:
                 print("ERROR invalid number of arguments")
                 sys.stdout.flush()
                 continue
+            x, y, field = map(int, parts)
             try:
-                x, y, field = map(int, parts)
                 self.game_board.set_position(x, y, str(field))
                 if not self.game_board.validate_board():
                     raise ValueError("Board validation failed after setting position")
             except ValueError as e:
                 print(f"ERROR {e}")
-                sys.stdout.flush()
-                continue
 
-        move: Optional[Tuple[int, int]] = self.calculate_best_move()
+        move: Optional[Tuple[int, int]] = self.ai.calculate_move()
         if move:
             print(f"{move[0]},{move[1]}")
             self.game_board.visualize()
@@ -186,11 +162,6 @@ class CommandHandler:
                 print("ERROR board validation failed after AI move")
         else:
             print("ERROR no valid move")
-        if timer:
-            timer.cancel()
-        if self.timeout_turn_reached:
-            print("ERROR timeout reached, ending round")
-            self.timeout_turn_reached = False
         sys.stdout.flush()
 
     def handle_end(self) -> None:
@@ -214,17 +185,6 @@ class CommandHandler:
             best_move[0] = self.ai.calculate_move()
         
         ai_thread = threading.Thread(target=run_ai)
-        timeout = self.info_handler.timeout_turn / 1000 if self.info_handler.timeout_turn > 0 else AI_THREAD_TIMEOUT
         ai_thread.start()
-        ai_thread.join(timeout=timeout)
-        
-        if ai_thread.is_alive():
-            self.timeout_turn_reached = True
-            return None
-        
+        ai_thread.join(timeout=AI_THREAD_TIMEOUT)
         return best_move[0]
-
-    def timeout_reached(self) -> None:
-        print("ERROR timeout reached, ending round")
-        self.timeout_turn_reached = True
-        sys.stdout.flush()
