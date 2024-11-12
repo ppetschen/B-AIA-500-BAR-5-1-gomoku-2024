@@ -38,13 +38,13 @@ class AI:
             5: 10000,
         }
 
-    def calculate_move(self) -> Tuple[int, int]:
+    def calculate_move(self, player: str) -> Tuple[int, int]:
         self.best_move.reset()
         simulation_thread = threading.Thread(target=self.run_simulations)
         simulation_thread.start()
         simulation_thread.join(timeout=AI_THREAD_TIMEOUT)
         self.game_board.set_position(
-            self.best_move.x, self.best_move.y, self.game_board.AI
+            self.best_move.x, self.best_move.y, player
         )
         return [self.best_move.x, self.best_move.y]
 
@@ -80,9 +80,9 @@ class AI:
         return score
 
     def evaluate_direction(self, x: int, y: int, direction: Tuple[int, int]) -> int:
-        count_self = self.count_player_in_direction(x, y, direction, self.game_board.AI)
+        count_self = self.count_player_in_direction(x, y, direction, self.game_board.PLAYER2)
         count_enemy = self.count_player_in_direction(
-            x, y, direction, self.game_board.PLAYER
+            x, y, direction, self.game_board.PLAYER1
         )
         return self.scores[count_self] + self.enemy_scores[count_enemy]
 

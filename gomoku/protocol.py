@@ -15,6 +15,8 @@ class CommandHandler:
         self.game_started = False
         self.board_locked = False
         self.begin_locked = False
+        self.player_1 = self.game_board.PLAYER1
+        self.player_2 = self.game_board.PLAYER2
 
     def listen_for_commands(self) -> None:
         for line in sys.stdin:
@@ -61,7 +63,7 @@ class CommandHandler:
         sys.stdout.flush()
 
     def handle_turn(self, command: List[str]) -> None:
-        if size := len(command) != 2:
+        if len(command) != 2:
             print("ERROR invalid number of arguments")
             sys.stdout.flush()
             return
@@ -76,10 +78,10 @@ class CommandHandler:
             if not self.game_board.is_valid_move(x, y):
                 print(f"ERROR invalid move: {x}, {y}")
                 return
-            self.game_board.opponent_move(x, y)
+            self.game_board.set_position(x, y, self.player_2)
             if not self.game_board.validate_board():
                 raise ValueError("Board validation failed after opponent move")
-            
+
             best_move = self.calculate_best_move()
             if best_move:
                 print(f"{best_move[0]},{best_move[1]}")
@@ -107,6 +109,8 @@ class CommandHandler:
             return
         self.board_locked = True
         self.begin_locked = True
+        self.player_1 = self.game_board.PLAYER1
+        self.player_2 = self.game_board.PLAYER2
         best_move = self.calculate_best_move()
         if best_move:
             print(f"{best_move[0]},{best_move[1]}")
@@ -118,7 +122,7 @@ class CommandHandler:
         sys.stdout.flush()
 
     def handle_board(self, command: List[str]) -> None:
-        if size := len(command) != 1:
+        if len(command) != 1:
             print("ERROR invalid number of arguments")
             sys.stdout.flush()
             return
@@ -126,13 +130,14 @@ class CommandHandler:
             print("ERROR game has not started")
             sys.stdout.flush()
             return
-        
+
         if self.board_locked:
             print("ERROR BOARD command not allowed. A game is in progress.")
             sys.stdout.flush()
             return
         self.begin_locked = True
         self.board_locked = True
+        last_move_player = None
         while True:
             line: str = sys.stdin.readline().strip()
             if line == "DONE":
@@ -149,12 +154,20 @@ class CommandHandler:
             x, y, field = map(int, parts)
             try:
                 self.game_board.set_position(x, y, str(field))
+                last_move_player = field
                 if not self.game_board.validate_board():
                     raise ValueError("Board validation failed after setting position")
             except ValueError as e:
                 print(f"ERROR {e}")
 
-        move: Optional[Tuple[int, int]] = self.ai.calculate_move()
+        if last_move_player == 1:
+            self.player_1 = self.game_board.PLAYER2
+            self.player_2 = self.game_board.PLAYER1
+        else:
+            self.player_1 = self.game_board.PLAYER1
+            self.player_2 = self.game_board.PLAYER2
+
+        move: Optional[Tuple[int, int]] = self.calculate_best_move()
         if move:
             print(f"{move[0]},{move[1]}")
             self.game_board.visualize()
@@ -182,7 +195,7 @@ class CommandHandler:
     def calculate_best_move(self) -> Optional[Tuple[int, int]]:
         best_move = [None]
         def run_ai():
-            best_move[0] = self.ai.calculate_move()
+            best_move[0] = self.ai.calculate_move(self.player_1)
         
         ai_thread = threading.Thread(target=run_ai)
         ai_thread.start()
