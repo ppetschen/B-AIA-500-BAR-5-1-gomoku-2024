@@ -36,13 +36,15 @@ class AI:
             4: 1500
         }
 
-    def calculate_move(self) -> Tuple[int, int]:
+    def calculate_move(self, player: str) -> Tuple[int, int]:
         self.best_move.reset()
+        self.current_player = player
+        self.opponent_player = self.game_board.PLAYER1 if player == self.game_board.PLAYER2 else self.game_board.PLAYER2
         simulation_thread = threading.Thread(target=self.run_simulations)
         simulation_thread.start()
         simulation_thread.join(timeout=AI_THREAD_TIMEOUT)
         self.game_board.set_position(
-            self.best_move.x, self.best_move.y, self.game_board.AI
+            self.best_move.x, self.best_move.y, player
         )
         return [self.best_move.x, self.best_move.y]
 
@@ -74,16 +76,16 @@ class AI:
         return score
 
     def evaluate_direction(self, x: int, y: int, direction: Tuple[int, int]) -> int:
-        count_self_1, selfHasSpace_1, selfIsBlocked_1 = self.count_player_in_direction(x, y, direction, self.game_board.AI)
-        count_self_2, selfHasSpace_2, selfIsBlocked_2 = self.count_player_in_direction(x, y, (-direction[0], -direction[1]), self.game_board.AI)
+        count_self_1, selfHasSpace_1, selfIsBlocked_1 = self.count_player_in_direction(x, y, direction, self.current_player)
+        count_self_2, selfHasSpace_2, selfIsBlocked_2 = self.count_player_in_direction(x, y, (-direction[0], -direction[1]), self.current_player)
         count_self = count_self_1 + count_self_2
         selfIsBlocked = selfIsBlocked_1 and selfIsBlocked_2
         selfIsHalfBlocked = selfIsBlocked_1 or selfIsBlocked_2
         selfHasSpace = selfHasSpace_1 or selfHasSpace_2
         selfHalfSpace = selfHasSpace_1 and selfHasSpace_2
 
-        count_opponent_1, opponentHasSpace_1, opponentIsBlocked_1 = self.count_player_in_direction(x, y, direction, self.game_board.PLAYER)
-        count_opponent_2, opponentHasSpace_2, opponentIsBlocked_2 = self.count_player_in_direction(x, y, (-direction[0], -direction[1]), self.game_board.PLAYER)
+        count_opponent_1, opponentHasSpace_1, opponentIsBlocked_1 = self.count_player_in_direction(x, y, direction, self.opponent_player)
+        count_opponent_2, opponentHasSpace_2, opponentIsBlocked_2 = self.count_player_in_direction(x, y, (-direction[0], -direction[1]), self.opponent_player)
         count_opponent = count_opponent_1 + count_opponent_2
         opponentIsBlocked = opponentIsBlocked_1 and opponentIsBlocked_2
         opponentIsHalfBlocked = opponentIsBlocked_1 or opponentIsBlocked_2

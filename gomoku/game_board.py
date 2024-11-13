@@ -3,8 +3,8 @@ from gomoku.config import PRINT_TABLE
 
 class GameBoard:
     EMPTY = "."
-    PLAYER = "1"
-    AI = "2"
+    PLAYER1 = "1"
+    PLAYER2 = "2"
 
     def __init__(self, size: int = 20):
         self.size: int = size
@@ -18,7 +18,7 @@ class GameBoard:
 
     def opponent_move(self, x: int, y: int) -> None:
         if self.is_valid_move(x, y):
-            self.set_position(x, y, self.PLAYER)
+            self.set_position(x, y, self.PLAYER1)
 
     def set_position(self, x: int, y: int, value: str) -> None:
         if self.is_valid_move(x, y):
@@ -43,6 +43,6 @@ class GameBoard:
     def validate_board(self) -> bool:
         for i in range(self.size):
             for j in range(self.size):
-                if self.board[i][j] not in (self.EMPTY, self.PLAYER, self.AI):
+                if self.board[i][j] not in (self.EMPTY, self.PLAYER1, self.PLAYER2):
                     return False
         return True
