@@ -22,20 +22,18 @@ class AI:
         self.game_board: GameBoard = game_board
         self.best_move: BestMove = BestMove()
         self.scores = {
-            0: 0,
-            1: 1,
-            2: 10,
-            3: 100,
-            4: 10000,
-            5: 100000,
+            0: 1,
+            1: 5,
+            2: 20,
+            3: 150,
+            4: 15000
         }
-        self.enemy_scores = {
-            0: 0,
-            1: 1,
-            2: 10,
-            3: 100,
-            4: 1000,
-            5: 10000,
+        self.opponent_scores = {
+            0: 1,
+            1: 5,
+            2: 20,
+            3: 150,
+            4: 1500
         }
 
     def calculate_move(self, player: str) -> Tuple[int, int]:
@@ -73,35 +71,54 @@ class AI:
             (0, 1),
             (1, 1),
             (1, -1),
-            (-1, 0),
-            (0, -1),
-            (-1, -1),
-            (-1, 1),
         ):
             score += self.evaluate_direction(x, y, direction)
         return score
 
     def evaluate_direction(self, x: int, y: int, direction: Tuple[int, int]) -> int:
-        count_self = self.count_player_in_direction(x, y, direction, self.current_player)
-        count_enemy = self.count_player_in_direction(
-            x, y, direction, self.opponent_player
-        )
-        return self.scores[count_self] + self.enemy_scores[count_enemy]
+        count_self_1, selfHasSpace_1, selfIsBlocked_1 = self.count_player_in_direction(x, y, direction, self.current_player)
+        count_self_2, selfHasSpace_2, selfIsBlocked_2 = self.count_player_in_direction(x, y, (-direction[0], -direction[1]), self.current_player)
+        count_self = count_self_1 + count_self_2
+        selfIsBlocked = selfIsBlocked_1 and selfIsBlocked_2
+        selfIsHalfBlocked = selfIsBlocked_1 or selfIsBlocked_2
+        selfHasSpace = selfHasSpace_1 or selfHasSpace_2
+        selfHalfSpace = selfHasSpace_1 and selfHasSpace_2
+
+        count_opponent_1, opponentHasSpace_1, opponentIsBlocked_1 = self.count_player_in_direction(x, y, direction, self.opponent_player)
+        count_opponent_2, opponentHasSpace_2, opponentIsBlocked_2 = self.count_player_in_direction(x, y, (-direction[0], -direction[1]), self.opponent_player)
+        count_opponent = count_opponent_1 + count_opponent_2
+        opponentIsBlocked = opponentIsBlocked_1 and opponentIsBlocked_2
+        opponentIsHalfBlocked = opponentIsBlocked_1 or opponentIsBlocked_2
+        opponentHasSpace = opponentHasSpace_1 or opponentHasSpace_2
+        opponentHalfSpace = opponentHasSpace_1 and opponentHasSpace_2
+
+        selfScore = self.scores[count_self] * (0.8 if selfHasSpace else 1) * (0.9 if selfHalfSpace else 1) * (0.5 if selfIsBlocked else 1) * (0.9 if selfIsHalfBlocked else 1)
+        opponentScore = self.opponent_scores[count_opponent] * (0.8 if opponentHasSpace else 1) * (0.9 if opponentHalfSpace else 1) * (0.5 if opponentIsBlocked else 1) * (0.9 if opponentIsHalfBlocked else 1)
+
+        return selfScore + opponentScore
 
     def count_player_in_direction(
         self, x: int, y: int, direction: Tuple[int, int], player: str
-    ):
+    ) -> Tuple[int, bool, bool]:
         count = 0
+        hasSpace = False
+        spaceInMiddle = False
+        isBlocked = False
         for i in range(1, 5):
-            if not self.game_board.is_inside_board(
-                x + i * direction[0], y + i * direction[1]
-            ):
+            new_x = x + i * direction[0]
+            new_y = y + i * direction[1]
+            if not self.game_board.is_inside_board(new_x, new_y):
+                isBlocked = True
                 break
-            if (
-                self.game_board.board[y + i * direction[1]][x + i * direction[0]]
-                == player
-            ):
+            if self.game_board.board[new_y][new_x] == player:
                 count += 1
-            else:
+                if spaceInMiddle:
+                    hasSpace = True
+            elif self.game_board.board[new_y][new_x] != self.game_board.EMPTY:
+                isBlocked = True
+                if spaceInMiddle:
+                    hasSpace = True
                 break
-        return count
+            else:
+                spaceInMiddle = True
+        return count, hasSpace, isBlocked
