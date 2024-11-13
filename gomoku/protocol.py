@@ -39,6 +39,8 @@ class CommandHandler:
             self.handle_end()
         elif cmd_type == "ABOUT":
             self.handle_about()
+        elif cmd_type == "INFO":
+            pass
         else:
             self.send_unknown()
 
@@ -111,8 +113,9 @@ class CommandHandler:
         self.begin_locked = True
         self.player_1 = self.game_board.PLAYER1
         self.player_2 = self.game_board.PLAYER2
-        best_move = self.calculate_best_move()
+        best_move = [3, 7]
         if best_move:
+            self.game_board.set_position(best_move[0], best_move[1], self.player_1)
             print(f"{best_move[0]},{best_move[1]}")
             self.game_board.visualize()
             if not self.game_board.validate_board():
