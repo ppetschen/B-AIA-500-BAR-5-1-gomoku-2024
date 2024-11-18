@@ -65,7 +65,6 @@ class AI:
                         self.best_move.x = j
                         self.best_move.y = i
                         self.best_move.score = score
-        # Sort evaluated moves by score
         evaluated_moves.sort(key=lambda move: move[2], reverse=True)
         top_moves = evaluated_moves[:5] + evaluated_moves[-5:]
         self.game_board.set_top_moves(top_moves)

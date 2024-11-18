@@ -27,18 +27,14 @@ class GameBoard:
             self.board[y][x] = value
         else:
             print(f"ERROR invalid move: {x}, {y}")
+
     def set_top_moves(self, top_moves: List[Tuple[int, int, int]]) -> None:
-        """
-        Set the top moves to display in the visualization.
-        :param top_moves: List of tuples (x, y, score).
-        """
         self.top_moves = top_moves
+
     def visualize(self) -> None:
         if (PRINT_TABLE == False):
             return
-        # Prepare the game board rows
         board_rows = [" ".join(str(cell) for cell in row) for row in self.board]
-        # Prepare the Best & Worst moves table
         best_moves_table = []
         worst_moves_table = []
         if TOP_MOVES and self.top_moves:
@@ -56,15 +52,14 @@ class GameBoard:
                 f"{rank:<5} {x:<5} {y:<5} {score:<10}"
                 for rank, (x, y, score) in enumerate(self.top_moves[-5:], start=1)
             ]
+
         combined_table = best_moves_table + [""] + worst_moves_table if TOP_MOVES and self.top_moves else []
 
-        # Pad the combined table to ensure 20 rows for alignment with the board
         while len(combined_table) < 20:
             combined_table.append("")
 
-        # Print: board (left) and tables (right) (if any)
         print("\n".join(
-            f"{board_row:<40} {table_row}"  # Adjust <40 for spacing between board and table
+            f"{board_row:<40} {table_row}"
             for board_row, table_row in zip(board_rows, combined_table)
         ))
 
