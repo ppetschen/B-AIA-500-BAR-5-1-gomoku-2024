@@ -15,8 +15,8 @@ class CommandHandler:
         self.game_started = False
         self.board_locked = False
         self.begin_locked = False
-        self.player_1 = self.game_board.PLAYER1
-        self.player_2 = self.game_board.PLAYER2
+        self.player_1 = self.game_board.PLAYER2
+        self.player_2 = self.game_board.PLAYER1
 
     def listen_for_commands(self) -> None:
         for line in sys.stdin:
