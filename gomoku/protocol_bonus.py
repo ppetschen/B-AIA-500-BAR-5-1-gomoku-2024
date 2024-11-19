@@ -19,21 +19,24 @@ class CommandHandlerBonus(CommandHandler):
             return super().handle_command(command)
 
     def handle_restart(self, command: List[str]) -> None:
-        #^ TEMP Copy of the handle_start method from protocol.py file
-        if size := len(command) != 2:
+        if size := len(command) != 1:
             print("ERROR invalid number of arguments")
             sys.stdout.flush()
             return
+        if not self.game_started:
+            print("ERROR RESTART received before START")
+            sys.stdout.flush()
+            return
+
+        #? if not self.game_ended:
+        #?     if self.game_started:
+        #?         print("ERROR you must finish the ongoing game first")
+
         try:
-            size: int = int(command[1])
-            if size == 20:
-                self.game_board.initialize(size)
-                self.game_started = True
-                self.board_locked = False
-                self.begin_locked = False
-                print("OK [RESTART]")
-                self.game_board.visualize()
-            else:
-                print("ERROR unsupported size [RESTART]")
+            self.game_board.initialize()
+            self.board_locked = False
+            self.begin_locked = False
+            print("OK")
+            self.game_board.visualize()
         except ValueError:
             print("ERROR invalid size")
