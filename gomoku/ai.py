@@ -1,4 +1,5 @@
-from typing import Optional, Tuple
+from concurrent.futures import ThreadPoolExecutor
+from typing import Tuple
 from gomoku.game_board import GameBoard
 import time
 import threading
@@ -56,20 +57,25 @@ class AI:
 
     def simulate_move(self) -> None:
         evaluated_moves = []
-        for i in range(self.game_board.size):
-            for j in range(self.game_board.size):
-                if self.game_board.board[i][j] == self.game_board.EMPTY:
-                    score = self.evaluate_position(j, i)
-                    evaluated_moves.append((j, i, score))
-                    if score > self.best_move.score:
-                        self.best_move.x = j
-                        self.best_move.y = i
-                        self.best_move.score = score
+        with ThreadPoolExecutor() as executor:
+            futures = [
+                executor.submit(self.evaluate_position, j, i)
+                for i in range(self.game_board.size)
+                for j in range(self.game_board.size)
+                if self.game_board.board[i][j] == self.game_board.EMPTY
+            ]
+            for future in futures:
+                j, i, score = future.result()
+                evaluated_moves.append((j, i, score))
+                if score > self.best_move.score:
+                    self.best_move.x = j
+                    self.best_move.y = i
+                    self.best_move.score = score
         evaluated_moves.sort(key=lambda move: move[2], reverse=True)
         top_moves = evaluated_moves[:5] + evaluated_moves[-5:]
         self.game_board.set_top_moves(top_moves)
 
-    def evaluate_position(self, x: int, y: int) -> int:
+    def evaluate_position(self, x: int, y: int) -> Tuple[int, int, int]:
         score = 0
         for direction in (
             (1, 0),
@@ -78,7 +84,7 @@ class AI:
             (1, -1),
         ):
             score += self.evaluate_direction(x, y, direction)
-        return score
+        return x, y, score
 
     def evaluate_direction(self, x: int, y: int, direction: Tuple[int, int]) -> int:
         count_self_1, selfHasSpace_1, selfIsBlocked_1 = self.count_player_in_direction(x, y, direction, self.current_player)
