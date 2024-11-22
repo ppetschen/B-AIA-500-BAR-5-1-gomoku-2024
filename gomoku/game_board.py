@@ -17,6 +17,7 @@ class GameBoard:
     def initialize(self, size: int = 20) -> None:
         self.size = size
         self.board = [[self.EMPTY for _ in range(size)] for _ in range(size)]
+        self.top_moves = []
 
     def opponent_move(self, x: int, y: int) -> None:
         if self.is_valid_move(x, y):

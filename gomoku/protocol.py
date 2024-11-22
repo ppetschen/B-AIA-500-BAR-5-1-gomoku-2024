@@ -6,7 +6,6 @@ import threading
 import time
 from gomoku.config import AI_THREAD_TIMEOUT
 
-
 class CommandHandler:
     def __init__(self):
         self.board: Optional[GameBoard] = None
@@ -15,8 +14,8 @@ class CommandHandler:
         self.game_started = False
         self.board_locked = False
         self.begin_locked = False
-        self.player_1 = self.game_board.PLAYER1
-        self.player_2 = self.game_board.PLAYER2
+        self.player_1 = self.game_board.PLAYER2
+        self.player_2 = self.game_board.PLAYER1
 
     def listen_for_commands(self) -> None:
         for line in sys.stdin:
