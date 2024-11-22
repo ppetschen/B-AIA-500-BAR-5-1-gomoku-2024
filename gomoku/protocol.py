@@ -112,7 +112,7 @@ class CommandHandler:
         self.begin_locked = True
         self.player_1 = self.game_board.PLAYER1
         self.player_2 = self.game_board.PLAYER2
-        best_move = [3, 7]
+        best_move = [10, 10]
         if best_move:
             self.game_board.set_position(best_move[0], best_move[1], self.player_1)
             print(f"{best_move[0]},{best_move[1]}")
