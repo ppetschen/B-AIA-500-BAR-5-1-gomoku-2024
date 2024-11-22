@@ -27,7 +27,7 @@ class AI:
             1: 5,
             2: 20,
             3: 150,
-            4: 15000
+            4: 5000
         }
         self.opponent_scores = {
             0: 1,
@@ -71,50 +71,60 @@ class AI:
                     self.best_move.x = j
                     self.best_move.y = i
                     self.best_move.score = score
+                    if score >= 15000:
+                        return
         evaluated_moves.sort(key=lambda move: move[2], reverse=True)
         top_moves = evaluated_moves[:5] + evaluated_moves[-5:]
         self.game_board.set_top_moves(top_moves)
 
     def evaluate_position(self, x: int, y: int) -> Tuple[int, int, int]:
         score = 0
+        isBlocked = True
         for direction in (
             (1, 0),
             (0, 1),
             (1, 1),
             (1, -1),
         ):
-            score += self.evaluate_direction(x, y, direction)
+            directionScore, directionBlocked = self.evaluate_direction(x, y, direction)
+            score += directionScore
+            if not directionBlocked:
+                isBlocked = False
+        if isBlocked:
+            score = score * 0.01
         return x, y, score
 
     def evaluate_direction(self, x: int, y: int, direction: Tuple[int, int]) -> int:
-        count_self_1, selfHasSpace_1, selfIsBlocked_1 = self.count_player_in_direction(x, y, direction, self.current_player)
-        count_self_2, selfHasSpace_2, selfIsBlocked_2 = self.count_player_in_direction(x, y, (-direction[0], -direction[1]), self.current_player)
+        count_self_1, selfHasSpace_1, selfIsBlocked_1, self_positions_1 = self.count_player_in_direction(x, y, direction, self.current_player)
+        count_self_2, selfHasSpace_2, selfIsBlocked_2, self_positions_2 = self.count_player_in_direction(x, y, (-direction[0], -direction[1]), self.current_player)
         count_self = count_self_1 + count_self_2
         selfIsBlocked = selfIsBlocked_1 and selfIsBlocked_2
         selfIsHalfBlocked = selfIsBlocked_1 or selfIsBlocked_2
         selfHasSpace = selfHasSpace_1 or selfHasSpace_2
         selfHalfSpace = selfHasSpace_1 and selfHasSpace_2
 
-        count_opponent_1, opponentHasSpace_1, opponentIsBlocked_1 = self.count_player_in_direction(x, y, direction, self.opponent_player)
-        count_opponent_2, opponentHasSpace_2, opponentIsBlocked_2 = self.count_player_in_direction(x, y, (-direction[0], -direction[1]), self.opponent_player)
+        count_opponent_1, opponentHasSpace_1, opponentIsBlocked_1, opponent_positions_1 = self.count_player_in_direction(x, y, direction, self.opponent_player)
+        count_opponent_2, opponentHasSpace_2, opponentIsBlocked_2, opponent_positions_2 = self.count_player_in_direction(x, y, (-direction[0], -direction[1]), self.opponent_player)
         count_opponent = count_opponent_1 + count_opponent_2
         opponentIsBlocked = opponentIsBlocked_1 and opponentIsBlocked_2
         opponentIsHalfBlocked = opponentIsBlocked_1 or opponentIsBlocked_2
         opponentHasSpace = opponentHasSpace_1 or opponentHasSpace_2
         opponentHalfSpace = opponentHasSpace_1 and opponentHasSpace_2
 
-        selfScore = self.scores[count_self] * (0.8 if selfHasSpace else 1) * (0.9 if selfHalfSpace else 1) * (0.5 if selfIsBlocked else 1) * (0.9 if selfIsHalfBlocked else 1)
-        opponentScore = self.opponent_scores[count_opponent] * (0.8 if opponentHasSpace else 1) * (0.9 if opponentHalfSpace else 1) * (0.5 if opponentIsBlocked else 1) * (0.9 if opponentIsHalfBlocked else 1)
+        self_contiguous = self.check_contiguous(self_positions_1, self_positions_2)
+        opponent_contiguous = self.check_contiguous(opponent_positions_1, opponent_positions_2)
 
-        return selfScore + opponentScore
+        selfScore = self.scores[count_self] * (0.8 if selfHasSpace else 1) * (0.9 if selfHalfSpace else 1) * (0.5 if selfIsBlocked else 1) * (0.9 if selfIsHalfBlocked else 1) * (1.5 if self_contiguous else 0.2)
+        opponentScore = self.opponent_scores[count_opponent] * (0.8 if opponentHasSpace else 1) * (0.9 if opponentHalfSpace else 1) * (0.5 if opponentIsBlocked else 1) * (0.9 if opponentIsHalfBlocked else 1) * (1.5 if opponent_contiguous else 0.2)
 
-    def count_player_in_direction(
-        self, x: int, y: int, direction: Tuple[int, int], player: str
-    ) -> Tuple[int, bool, bool]:
+        return selfScore + opponentScore, selfIsBlocked and opponentIsBlocked
+
+    def count_player_in_direction(self, x: int, y: int, direction: Tuple[int, int], player: str) -> Tuple[int, bool, bool, list]:
         count = 0
         hasSpace = False
         spaceInMiddle = False
         isBlocked = False
+        positions = []
         for i in range(1, 5):
             new_x = x + i * direction[0]
             new_y = y + i * direction[1]
@@ -123,6 +133,7 @@ class AI:
                 break
             if self.game_board.board[new_y][new_x] == player:
                 count += 1
+                positions.append((new_x, new_y))
                 if spaceInMiddle:
                     hasSpace = True
             elif self.game_board.board[new_y][new_x] != self.game_board.EMPTY:
@@ -132,4 +143,14 @@ class AI:
                 break
             else:
                 spaceInMiddle = True
-        return count, hasSpace, isBlocked
+        return count, hasSpace, isBlocked, positions
+
+    def check_contiguous(self, positions_1: list, positions_2: list) -> bool:
+        if not positions_1 or not positions_2:
+            return True
+        positions = positions_1 + [(x, y) for x, y in positions_2]
+        positions.sort()
+        for i in range(1, len(positions)):
+            if abs(positions[i][0] - positions[i-1][0]) > 1 or abs(positions[i][1] - positions[i-1][1]) > 1:
+                return False
+        return True
