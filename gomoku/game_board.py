@@ -12,7 +12,7 @@ class GameBoard:
         self.board: List[List[str]] = [
             [self.EMPTY for _ in range(self.size)] for _ in range(self.size)
         ]
-        self.top_moves: List[Tuple[int, int, int]] = []  # Top moves (x, y, score)
+        self.top_moves: List[Tuple[int, int, int]] = []
 
     def initialize(self, size: int = 20) -> None:
         self.size = size
