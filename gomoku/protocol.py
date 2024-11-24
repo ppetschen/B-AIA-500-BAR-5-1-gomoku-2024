@@ -8,7 +8,7 @@ from gomoku.config import AI_THREAD_TIMEOUT
 
 class CommandHandler:
     def __init__(self):
-        self.board: Optional[GameBoard] = None
+        #! self.board: Optional[GameBoard] = None
         self.game_board: GameBoard = GameBoard()
         self.ai: AI = AI(self.game_board)
         self.game_started = False
@@ -51,7 +51,7 @@ class CommandHandler:
         try:
             size: int = int(command[1])
             if size == 20:
-                self.game_board.initialize(size)
+                self.game_board.initialize()
                 self.game_started = True
                 self.board_locked = False
                 self.begin_locked = False
