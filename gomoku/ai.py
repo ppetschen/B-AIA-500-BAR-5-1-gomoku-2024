@@ -23,18 +23,18 @@ class AI:
         self.game_board: GameBoard = game_board
         self.best_move: BestMove = BestMove()
         self.scores = {
-            0: 1,
+            0: 0.1,
             1: 5,
-            2: 20,
-            3: 150,
-            4: 5000
+            2: 50,
+            3: 300,
+            4: 15000
         }
         self.opponent_scores = {
-            0: 1,
+            0: 0.1,
             1: 5,
-            2: 20,
-            3: 150,
-            4: 1500
+            2: 50,
+            3: 250,
+            4: 2500
         }
 
     def calculate_move(self, player: str) -> Tuple[int, int]:
@@ -95,62 +95,47 @@ class AI:
         return x, y, score
 
     def evaluate_direction(self, x: int, y: int, direction: Tuple[int, int]) -> int:
-        count_self_1, selfHasSpace_1, selfIsBlocked_1, self_positions_1 = self.count_player_in_direction(x, y, direction, self.current_player)
-        count_self_2, selfHasSpace_2, selfIsBlocked_2, self_positions_2 = self.count_player_in_direction(x, y, (-direction[0], -direction[1]), self.current_player)
-        count_self = count_self_1 + count_self_2
-        selfIsBlocked = selfIsBlocked_1 and selfIsBlocked_2
-        selfIsHalfBlocked = selfIsBlocked_1 or selfIsBlocked_2
-        selfHasSpace = selfHasSpace_1 or selfHasSpace_2
-        selfHalfSpace = selfHasSpace_1 and selfHasSpace_2
+        count_self, selfHasSpace, selfIsBlocked, selfPreBlocked = self.count_player_in_direction(x, y, direction, self.current_player)
+        count_opponent, opponentHasSpace, opponentIsBlocked, opponentPreBlocked = self.count_player_in_direction(x, y, direction, self.opponent_player)
 
-        count_opponent_1, opponentHasSpace_1, opponentIsBlocked_1, opponent_positions_1 = self.count_player_in_direction(x, y, direction, self.opponent_player)
-        count_opponent_2, opponentHasSpace_2, opponentIsBlocked_2, opponent_positions_2 = self.count_player_in_direction(x, y, (-direction[0], -direction[1]), self.opponent_player)
-        count_opponent = count_opponent_1 + count_opponent_2
-        opponentIsBlocked = opponentIsBlocked_1 and opponentIsBlocked_2
-        opponentIsHalfBlocked = opponentIsBlocked_1 or opponentIsBlocked_2
-        opponentHasSpace = opponentHasSpace_1 or opponentHasSpace_2
-        opponentHalfSpace = opponentHasSpace_1 and opponentHasSpace_2
-
-        self_contiguous = self.check_contiguous(self_positions_1, self_positions_2)
-        opponent_contiguous = self.check_contiguous(opponent_positions_1, opponent_positions_2)
-
-        selfScore = self.scores[count_self] * (0.8 if selfHasSpace else 1) * (0.9 if selfHalfSpace else 1) * (0.5 if selfIsBlocked else 1) * (0.9 if selfIsHalfBlocked else 1) * (1.5 if self_contiguous else 0.2)
-        opponentScore = self.opponent_scores[count_opponent] * (0.8 if opponentHasSpace else 1) * (0.9 if opponentHalfSpace else 1) * (0.5 if opponentIsBlocked else 1) * (0.9 if opponentIsHalfBlocked else 1) * (1.5 if opponent_contiguous else 0.2)
+        selfScore = self.scores[count_self] * (0.8 if selfHasSpace else 1) * (0.5 if selfIsBlocked else 1) * (0.7 if selfPreBlocked else 1)
+        opponentScore = self.opponent_scores[count_opponent] * (0.8 if opponentHasSpace else 1) * (0.5 if opponentIsBlocked else 1) * (0.7 if opponentPreBlocked else 1)
 
         return selfScore + opponentScore, selfIsBlocked and opponentIsBlocked
 
-    def count_player_in_direction(self, x: int, y: int, direction: Tuple[int, int], player: str) -> Tuple[int, bool, bool, list]:
-        count = 0
+    def count_player_in_direction(
+        self, x: int, y: int, direction: Tuple[int, int], player: str
+    ) -> Tuple[int, bool, bool]:
+        max_count = 0
         hasSpace = False
-        spaceInMiddle = False
-        isBlocked = False
-        positions = []
-        for i in range(1, 5):
-            new_x = x + i * direction[0]
-            new_y = y + i * direction[1]
-            if not self.game_board.is_inside_board(new_x, new_y):
-                isBlocked = True
-                break
-            if self.game_board.board[new_y][new_x] == player:
-                count += 1
-                positions.append((new_x, new_y))
-                if spaceInMiddle:
-                    hasSpace = True
-            elif self.game_board.board[new_y][new_x] != self.game_board.EMPTY:
-                isBlocked = True
-                if spaceInMiddle:
-                    hasSpace = True
-                break
-            else:
-                spaceInMiddle = True
-        return count, hasSpace, isBlocked, positions
+        isBlocked = True
+        groupBlocked = False
+        preBlocked = False
 
-    def check_contiguous(self, positions_1: list, positions_2: list) -> bool:
-        if not positions_1 or not positions_2:
-            return True
-        positions = positions_1 + [(x, y) for x, y in positions_2]
-        positions.sort()
-        for i in range(1, len(positions)):
-            if abs(positions[i][0] - positions[i-1][0]) > 1 or abs(positions[i][1] - positions[i-1][1]) > 1:
-                return False
-        return True
+        for start in range(-4, 1):
+            count = 0
+            spaceInMiddle = False
+            if groupBlocked:
+                preBlocked = True
+            groupBlocked = False
+            for i in range(5):
+                new_x = x + (start + i) * direction[0]
+                new_y = y + (start + i) * direction[1]
+                if not self.game_board.is_inside_board(new_x, new_y):
+                    groupBlocked = True
+                    break
+                if self.game_board.board[new_y][new_x] == player:
+                    count += 1
+                    if spaceInMiddle:
+                        hasSpace = True
+                elif self.game_board.board[new_y][new_x] != self.game_board.EMPTY:
+                    groupBlocked = True
+                    break
+                else:
+                    if count > 0:
+                        spaceInMiddle = True
+            if not groupBlocked:
+                isBlocked = False
+                max_count = max(max_count, count)
+
+        return max_count, hasSpace, isBlocked, preBlocked
